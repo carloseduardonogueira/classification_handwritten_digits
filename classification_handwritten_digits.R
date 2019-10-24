@@ -12,11 +12,14 @@ library(rpart)
 library(rpart.plot)
 library(e1071)
 
+
+location <- getwd()
+
 #setting working directory
-setwd("/home/carloseduardo/Área de Trabalho/classification_handwritten_digits/data")
+setwd(location)
 
 #loading files
-file_list <- list.files(path = "/home/carloseduardo/Área de Trabalho/classification_handwritten_digits/data")
+file_list <- list.files(path = location)
 
 #reading the files and creating data frame
 df <- data.frame()
