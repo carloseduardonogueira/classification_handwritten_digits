@@ -1,19 +1,26 @@
+############################################
 ### Classification of handwritten digits ###
+############################################
+#install.packages("tidyverse")
+#install.packages("FNN")
+#install.packages("e1071")
+#install.packages("rpart")
+#install.packages("rpart.plot")
+#install.packages("factoextra")
+#install.packages("caret")
+#install.packages("rgl")
 
-install.packages("tidverse")
-install.packages("FNN")
-install.packages("e1071")
-install.packages("rpart")
-install.packages("rpart.plot")
-
+library(rgl)
+library(ggplot2)
+library(caret)
+library(factoextra)
 library(tidyverse)
 library(FNN)
 library(rpart)
 library(rpart.plot)
 library(e1071)
 
-
-location <- getwd()
+location <- "/home/carloseduardo/projects/classification_handwritten_digits/data"
 
 #setting working directory
 setwd(location)
@@ -33,44 +40,52 @@ for(file in file_list){
   df <- matrix(unlist(content_file), nrow = nrow(df) + 1, ncol=length(content_file))
   df<-as.data.frame(df)
   df$class <- class
+  print(file)
 }
 
+#######################################
 #preparing dataframe for classification
+#######################################
 idxs <- sample(1:nrow(df), as.integer(0.8*nrow(df)))
 
 train_rows <- df[idxs,]
 test_rows <- df[-idxs,]
 
 class_train <- train_rows[,4097]
-class_test <- test_rows[,4097]
+class_test <- factor(test_rows[,4097]) 
 
 train <- train_rows[,-4097]
 test <- test_rows[,-4097]
 
-#classification using KNN - K-Nearest Neighbors and calculating accuracy 
-k <- c(1,3,7,9)
-knn_accuracy <- c()
+########################################################################
+#classification using KNN - K-Nearest Neighbors and calculating accuracy
+########################################################################
+k1<-knn(train, test, class_train, 1)
+confusionMatrix(k1,class_test)
 
-for (k in k) {
-  result<-knn(train, test, class_train, k)
-  
-  hits<-0
-  
-  for(i in 1:length(class_test)){
-    if(result[i] == class_test[i])
-      hits <- hits +  1
-  }
-  knn_accuracy <- c(knn_accuracy, (hits/length(class_test))*100)
-}
+k3<-knn(train, test, class_train, 3)
+confusionMatrix(k3,class_test)
 
+k7<-knn(train, test, class_train, 7)
+confusionMatrix(k7,class_test)
+
+k9<-knn(train, test, class_train, 9)
+confusionMatrix(k9,class_test)
+
+###################################
 #classification using decision tree
+###################################
 model <- rpart(class~., train_rows, method = "class", control = rpart.control(minsplit = 1))
 
 plot <- rpart.plot(model, type = 3)
 
 dtree_pred <- predict(model, test, type = "class")
 
+confusionMatrix(dtree_pred,class_test)
+
+##################################################
 #classification using SVM - Support Vector Machine
+##################################################
 classifier = svm(formula = class~.,
                  data = train_rows,
                  type = 'C-classification',
@@ -78,20 +93,107 @@ classifier = svm(formula = class~.,
 
 svm_pred = predict(classifier, newdata = test)
 
-#calculating accuracy of SVM and decision tree
-svm_hits <- 0
-dtree_hits <- 0
+confusionMatrix(svm_pred,class_test)
 
-for(i in 1:length(class_test)){
-  if(svm_pred[i] == class_test[i])
-    svm_hits <- svm_hits +  1
-  if(dtree_pred[i] == class_test[i])
-    dtree_hits <- dtree_hits +  1
+##############################################
+#clustering algorithm
+##############################################
+df_cluster <- df[,-4097]
+
+kmeans_result <- kmeans(df_cluster, 10)
+
+plot3d(df_cluster, col=kmeans_result$cluster, main="k-means clusters")
+
+fviz_nbclust(df_cluster, kmeans, method = "wss")
+
+results <-table(df$class, kmeans_result$cluster)
+
+for(i in 1:10 ){
+  cluster <- as.data.frame(t(results[,i]))
+  clusters <- rbind(clusters, cluster)
 }
-svm_accuracy <- svm_hits/length(class_test)*100
-dtree_accuracy <- dtree_hits/length(class_test)*100
 
-print(knn_accuracy)
-print(svm_accuracy)
-print(dtree_accuracy)
+ggplot(data = clusters, aes(colnames(clusters),clusters$`0`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 1') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters$`0`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters, aes(colnames(clusters),clusters$`1`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 2') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters$`1`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters, aes(colnames(clusters),clusters$`2`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 3') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters$`2`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters, aes(colnames(clusters),clusters$`3`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 4') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters$`3`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters, aes(colnames(clusters),clusters$`4`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 5') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters$`4`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters, aes(colnames(clusters),clusters$`5`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 6') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters$`5`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters, aes(colnames(clusters),clusters$`6`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 7') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters$`6`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters, aes(colnames(clusters),clusters$`7`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 8') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters$`7`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters, aes(colnames(clusters),clusters$`8`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 9') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters$`8`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters, aes(colnames(clusters),clusters$`9`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 10') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters$`9`), vjust=1.6, color="white", size=3.5)
+
+#############################################
+#principal component analisys
+#############################################
+df.pca <- prcomp(df[,1:4096], center = TRUE,scale. = TRUE)
+summary(df.pca)
+
+fviz_eig(df.pca)
+
+fviz_pca(df.pca)
+
+
+
+
 
