@@ -108,6 +108,7 @@ fviz_nbclust(df_cluster, kmeans, method = "wss")
 
 results <-table(df$class, kmeans_result$cluster)
 
+clusters <- data_frame()
 for(i in 1:10 ){
   cluster <- as.data.frame(t(results[,i]))
   clusters <- rbind(clusters, cluster)
@@ -191,9 +192,143 @@ summary(df.pca)
 
 fviz_eig(df.pca)
 
-fviz_pca(df.pca)
+new_df <- as.data.frame(predict(df.pca, df)) 
+new_df$class <- df$class
 
+##############################################
+#dataset split after PCA application
+##############################################
+idxs_pca <- sample(1:nrow(new_df), as.integer(0.8*nrow(new_df)))
 
+train_rows_pca <- new_df[idxs_pca,]
+test_rows_pca <- new_df[-idxs_pca,]
 
+class_train_pca <- train_rows_pca[,1950]
+class_test_pca <- factor(test_rows_pca[,1950]) 
 
+train_pca <- train_rows_pca[,-1950]
+test_pca <- test_rows_pca[,-1950]
 
+##############################################
+#KNN after PCA application
+##############################################
+k1_pca<-knn(train_pca, test_pca, class_train_pca, 1)
+confusionMatrix(k1_pca,class_test_pca)
+
+k3_pca<-knn(train_pca, test_pca, class_train_pca, 3)
+confusionMatrix(k3_pca,class_test_pca)
+
+k7_pca<-knn(train_pca, test_pca, class_train_pca, 7)
+confusionMatrix(k7_pca,class_test_pca)
+
+k9_pca<-knn(train_pca, test_pca, class_train_pca, 9)
+confusionMatrix(k9_pca,class_test_pca)
+##############################################
+#SVM after PCA application
+##############################################
+classifier_pca = svm(formula = class~.,
+                     data = train_rows_pca,
+                     type = 'C-classification',
+                     kernel = 'linear')
+
+svm_pred_pca = predict(classifier_pca, newdata = test_pca)
+
+confusionMatrix(svm_pred_pca,class_test_pca)
+##############################################
+#decision tree after PCA application
+##############################################
+model_pca <- rpart(class~., train_rows_pca, method = "class", control = rpart.control(minsplit = 1))
+
+plot <- rpart.plot(model_pca, type = 3)
+
+dtree_pred_pca <- predict(model_pca, test_pca, type = "class")
+
+confusionMatrix(dtree_pred_pca,class_test_pca)
+##############################################
+#clustering after PCA application
+##############################################
+df_cluster_pca <- new_df[,-1950]
+
+kmeans_result_pca <- kmeans(df_cluster_pca, 10)
+
+plot3d(df_cluster, col=kmeans_result$cluster, main="k-means clusters")
+
+fviz_nbclust(df_cluster_pca, kmeans, method = "wss")
+
+results_pca <-table(new_df$class, kmeans_result_pca$cluster)
+
+clusters_pca <- data_frame()
+for(i in 1:10 ){
+  cluster <- as.data.frame(t(results_pca[,i]))
+  clusters_pca <- rbind(clusters_pca, cluster)
+}
+
+ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`0`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 1') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters_pca$`0`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`1`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 2') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters_pca$`1`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`2`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 3') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters_pca$`2`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`3`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 4') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters_pca$`3`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`4`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 5') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters_pca$`4`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`5`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 6') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters_pca$`5`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`6`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 7') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters_pca$`6`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`7`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 8') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters_pca$`7`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`8`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 9') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters_pca$`8`), vjust=1.6, color="white", size=3.5)
+
+ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`9`)) + 
+  geom_bar(stat = "identity", fill="steelblue") + 
+  ggtitle('Quantidade de exemplares no grupo 10') +
+  xlab('Exemplares') +
+  ylab('Quantidade de exemplares') +
+  geom_text(aes(label=clusters_pca$`9`), vjust=1.6, color="white", size=3.5)
