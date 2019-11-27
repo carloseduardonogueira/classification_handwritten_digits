@@ -37,11 +37,10 @@ for(file in file_list){
   content_file <- read_lines(file)
   content_file <- content_file[-(1:3)]
   content_file <- as.numeric(unlist(strsplit(content_file, ' ')))
-  df <- matrix(unlist(content_file), nrow = nrow(df) + 1, ncol=length(content_file))
-  df<-as.data.frame(df)
-  df$class <- class
+  df <- rbind(df, content_file)
   print(file)
 }
+df$class <- class
 
 #######################################
 #preparing dataframe for classification
@@ -187,7 +186,7 @@ ggplot(data = clusters, aes(colnames(clusters),clusters$`9`)) +
 #############################################
 #principal component analisys
 #############################################
-df.pca <- prcomp(df[,1:4096], center = TRUE,scale. = TRUE)
+df.pca <- prcomp(df[,1:4096], center = TRUE,scale. = FALSE)
 summary(df.pca)
 
 fviz_eig(df.pca)
