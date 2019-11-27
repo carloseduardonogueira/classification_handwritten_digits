@@ -332,3 +332,4 @@ ggplot(data = clusters_pca, aes(colnames(clusters_pca),clusters_pca$`9`)) +
   xlab('Exemplares') +
   ylab('Quantidade de exemplares') +
   geom_text(aes(label=clusters_pca$`9`), vjust=1.6, color="white", size=3.5)
+
